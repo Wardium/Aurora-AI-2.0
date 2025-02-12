@@ -176,16 +176,14 @@ def simplify_conversation(model, history):
 
     # Use the AI model to simplify the message
     
-    while True:
-        try:
-            simplified_message = get_ai_response(model, prompt_template, api_key)
-            break
-        except google.api_core.exceptions.ResourceExhausted:
-            print("API quota exceeded. Retrying after a delay...")
-            time.sleep(20)  # Wait 10 seconds before retrying
-        except Exception as e:
-            print(f"Unexpected error: {e}")
-            return "An error occurred."
+    try:
+        simplified_message = get_ai_response(model, prompt_template, api_key)
+    except ResourceExhausted:
+        print("API quota exceeded. Retrying after a delay...")
+        time.sleep(20)  # Wait 10 seconds before retrying
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return "An error occurred."
     
     simplified_text = simplified_message.text.strip()
     cleaned_text = re.sub('@NONE', '', simplified_text)
@@ -264,26 +262,24 @@ def get_response(history, model):
             send_image = False
             print("Image Mode")
             prompt = history + " Explain The Following Image:"
-            
-            while True:
-                try:
-                    write_to_api("Looking", True)
-                    response = response = get_ai_response(model, prompt, api_key, image) 
-                    break
-                except google.api_core.exceptions.ResourceExhausted:
-                    print("API quota exceeded. Retrying after a delay...")
-                    time.sleep(20)  # Wait 10 seconds before retrying
-                except Exception as e:
-                    print(f"Unexpected error: {e}")
-                    return "An error occurred."
-                write_to_api("Looking", False)
+            try:
+                write_to_api("Looking", True)
+                response = response = get_ai_response(model, prompt, api_key, image) 
+            except ResourceExhausted:
+                print("API quota exceeded. Retrying after a delay...")
+                time.sleep(20)  # Wait 10 seconds before retrying
+            except Exception as e:
+                print(f"Unexpected error: {e}")
+                return "An error occurred."
+            write_to_api("Looking", False)
                 
         else:
         
             while True:
                 try:
                     response = get_ai_response(model, history, api_key)
-                except google.api_core.exceptions.ResourceExhausted:
+                    break
+                except ResourceExhausted:
                     print("API quota exceeded. Retrying after a delay...")
                     time.sleep(20)  # Wait 10 seconds before retrying
                 except Exception as e:
@@ -310,7 +306,7 @@ def custom_gem(user_input, model):
         try:
             simplified_message = get_ai_response(model, prompt_template, api_key)
             break
-        except google.api_core.exceptions.ResourceExhausted:
+        except ResourceExhausted:
             print("API quota exceeded. Retrying after a delay...")
             time.sleep(20)  # Wait 10 seconds before retrying
         except Exception as e:
@@ -332,7 +328,7 @@ def check_end_of_conversation(user_input, end_detection_model):
             try:
                 response = get_ai_response(end_detection_model, prompt, api_key)
                 break
-            except google.api_core.exceptions.ResourceExhausted:
+            except ResourceExhausted:
                 print("API quota exceeded. Retrying after a delay...")
                 time.sleep(10)  # Wait 10 seconds before retrying
             except Exception as e:
@@ -368,6 +364,7 @@ def get_ai_response(model, text, api, image=None):
     genai.configure(api_key=api)  # Ensure API is configured
 
     while True:
+        print("GET RESPONSE")
         try:
             if image:
                 response = model.generate_content(contents=[text, image])  # Handle image input
@@ -375,9 +372,9 @@ def get_ai_response(model, text, api, image=None):
                 response = model.generate_content(contents=[text])  # Text only
 
             return response  # Return raw response (modify as needed)
-        except google.api_core.exceptions.ResourceExhausted:
-            print("API quota exceeded. Retrying in 20 seconds...")
-            time.sleep(20)  # Wait before retrying
+        except ResourceExhausted:
+            print("API quota exceeded. Retrying...")
+            time.sleep(1)  # Wait before retrying
         except Exception as e:
             print(f"Unexpected error: {e}")
             return None  # Return None to indicate failure
@@ -994,7 +991,7 @@ def gemini_api(gem_input):
     model = genai.GenerativeModel('gemini-1.5-flash')
     try:
         gem_return = model.generate_content(gem_prompt)
-    except google.api_core.exceptions.ResourceExhausted:
+    except ResourceExhausted:
         print("API quota exceeded. Retrying after a delay...")
         time.sleep(20)  # Wait 10 seconds before retrying
     
