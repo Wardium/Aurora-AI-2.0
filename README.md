@@ -9,7 +9,7 @@ Aurora AI is a multi-functional AI assistant built with Python. It leverages nat
 - **FREE**: Completely Free To Use, No Need For Subscriptions!
 - **Natural Language Processing**: Uses Google Gemini AI for generating meaningful responses.  
 - **Speech Recognition**: Converts spoken words into text commands using the `SpeechRecognition` library.  
-- **Text-to-Speech (TTS)**: Outputs AI-generated responses as audio using Google TTS.  
+- **Text-to-Speech (TTS)**: Outputs AI-generated responses as audio using Coqui.  
 - **Audio Playback**: Plays audio files or text-to-speech output using `pygame` and `pydub`.
 - **Music Player**: Simply put all your music in the "music" folder and tell aurora to play it! no need to be specific!
 - **Simplified Conversations**: Reduces large conversation histories to their key points.  
