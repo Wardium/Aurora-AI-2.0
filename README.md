@@ -38,7 +38,10 @@ Aurora AI is a multi-functional AI assistant built with Python. It leverages nat
    git clone https://github.com/<yourusername>/aurora-ai.git
    cd aurora-ai
 
-3. **Run It!**
+3. **Run The Installer!**
+   ```bash
+   Install.bat - On Windows
+   python install.py - On Others
 
 ---
    
@@ -51,8 +54,8 @@ Aurora AI is a multi-functional AI assistant built with Python. It leverages nat
 
 ## Road
 
-- Better Voice
 - Completely Locally Ran Mode
-- Interupt Detection
 - Music Recognizer
-- Image Detetction
+- Better Visual
+- Web Mode
+- Small Mode
