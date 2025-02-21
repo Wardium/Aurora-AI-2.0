@@ -1,4 +1,4 @@
-![Aurora](src/aurora.png)
+![Aurora](src/Aurora.png)
 
 # Aurora AI 2.0
 
