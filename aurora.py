@@ -262,15 +262,19 @@ def get_response(history, model):
             send_image = False
             print("Image Mode")
             prompt = history + " Explain The Following Image:"
-            try:
-                write_to_api("Looking", True)
-                response = response = get_ai_response(model, prompt, api_key, image) 
-            except ResourceExhausted:
-                print("API quota exceeded. Retrying after a delay...")
-                time.sleep(20)  # Wait 10 seconds before retrying
-            except Exception as e:
-                print(f"Unexpected error: {e}")
-                return "An error occurred."
+            
+            while True:
+                try:
+                    write_to_api("Looking", True)
+                    response = response = get_ai_response(model, prompt, api_key, image) 
+                    break
+                except ResourceExhausted:
+                    print("API quota exceeded. Retrying after a delay...")
+                    time.sleep(20)  # Wait 10 seconds before retrying
+                except Exception as e:
+                    print(f"Unexpected error: {e}")
+                    return "An error occurred."
+                    
             write_to_api("Looking", False)
                 
         else:
