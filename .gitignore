@@ -1,2 +1,4 @@
 settings.py
 logs
+api.py
+logs/placeholder.txt

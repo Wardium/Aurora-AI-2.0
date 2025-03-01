@@ -88,7 +88,7 @@ musicchannel = pygame.mixer.Channel(2)
 startedmusic = False
 send_image = False
 current_app = ""
-last_app = "Unknown"
+all_apps = []
 app_call = False
 send_image = False
 image = ""
@@ -387,7 +387,7 @@ def get_ai_response(model, text, api, image=None):
 def wait_for_wake_word_or_input(interaction_mode, wake_word="aurora"):
     """Listens for a specific wake word or allows user to type input depending on the interaction mode."""
     
-    global current_app, last_app, app_call
+    global current_app, all_apps, app_call
     
     recognizer = sr.Recognizer()
     write_to_api("waiting", True)
@@ -412,9 +412,13 @@ def wait_for_wake_word_or_input(interaction_mode, wake_word="aurora"):
                         if current_app != get_focused_app():
                             print(Fore.LIGHTBLACK_EX + f"App: {get_focused_app()}" + Style.RESET_ALL)
                             current_app = get_focused_app()
-                            ai_prompt = f"Is this application currently focused considers important? (say if they were playing a game, or using not normal software used on a computer. not things like teminals or file viewers or browsers. (eg. explorer.exe, opera.exe, googlechrome.exe, cmd.exe). only respond with 'yes' or 'no'. New Application Focused: {current_app} Old Application: {last_app}"
+                            
+                            ai_prompt = f"Is this application currently focused considers important? (say if they were playing a game, or using not normal software used on a computer. not things like teminals or file viewers or browsers. (eg. explorer.exe, opera.exe, googlechrome.exe, cmd.exe). only respond with 'yes' or 'no'. if the app was opened before it is not important. New Application Focused: {current_app} Old Application: {', '.join(all_apps)}"
+                            
+                            
                             decision = custom_gem(ai_prompt, fast_model)
-                            last_app = current_app
+                            all_apps.append(current_app)
+                            
                             if decision == "yes":
                                 print(Fore.LIGHTBLACK_EX + f"App Call" + Style.RESET_ALL)
                                 app_call = True
