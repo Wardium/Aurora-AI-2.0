@@ -187,7 +187,7 @@ class FaceApp:
                 self.last_talking = talking
     
             if emotion != self.last_emotion:
-                self.set_expression(normal)
+                self.set_expression("normal")
                 self.last_emotion = emotion
 
             if looking != self.last_looking:
