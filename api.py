@@ -1,9 +1,12 @@
-output = ""
+output = "See ya"
 waiting_for_input = "no"
 response = "yes"
 finished = False
-waiting_for_response = "yes"
-processing = True
-emotion = "mad"
-waiting = True
+waiting_for_response = "no"
+processing = False
+emotion = "sad"
+waiting = False
 random_talk = False
+Looking = False
+talking = True
+length = "116.66938781738281"

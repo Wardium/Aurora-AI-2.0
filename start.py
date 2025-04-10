@@ -63,7 +63,7 @@ if __name__ == "__main__":
 
         # Start both scripts as threads
         script1_thread = threading.Thread(target=run_script, args=("aurora.py",))
-        script2_thread = threading.Thread(target=run_script, args=("gui.py",))
+        script2_thread = threading.Thread(target=run_script, args=("face.py",))
         
         script1_thread.start()
         script2_thread.start()

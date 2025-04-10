@@ -70,6 +70,7 @@ from pydub import AudioSegment
 from google.api_core.exceptions import ResourceExhausted
 
 #All the global variables for the program!
+_make_voice_lock = threading.Lock()
 pygame.mixer.init()
 music_files = ""
 random_talk = False
@@ -115,7 +116,7 @@ personality = settings.personality_text + (
         "\n"
         "6. If the conversation ends, finish your reply with '@END'. if asked to shut down. reply only with '@shutdown'"
         "\n"
-        "7. at the start of the response always put your current emotion from these 6 choices '@E_SAD' '@E_HAPPY' '@E_MAD' '@E_NERVOUS' '@E_NEUTRAL' '@E_SCARED' '@E_BORED' '@E_JUDGEMENTAL' without anything around it."
+        "7. at the start of the response always put your current emotion from these 6 choices '@E_SAD' '@E_HAPPY' '@E_MAD' '@E_NEUTRAL' '@E_SCARED' without anything around it."
         "\n"
         "8. all messages in history and response has a time, use this to get proper time between respones and act accordingly."
         "\n"
@@ -189,11 +190,6 @@ def simplify_conversation(model, history):
     cleaned_text = re.sub('@NONE', '', simplified_text)
     
     return cleaned_text
-
-def playsound(sound_file):
-    """Plays a sound asynchronously using pygame."""
-    pygame.mixer.init()
-    pygame.mixer.Sound(sound_file).play()
 
 def write_to_api(variable_name, variable_state):
     """Writes or updates a variable and its state in api.py, removing leading/trailing spaces."""
@@ -351,7 +347,26 @@ def get_random_greet():
         "Yes?",
         "Hm?",
         "What is it?",
-        "",
+    ]
+    return random.choice(text_options)
+
+def get_random_end():
+    text_options = [
+        "Talk to you later",
+        "Talk to you later",
+        "See ya",
+        "Bye",
+        "I'm done talking now",
+    ]
+    return random.choice(text_options)
+
+def get_random_hear():
+    text_options = [
+        "What was that?",
+        "What?",
+        "Hm?",
+        "Sorry?",
+        "I didn't catch that",
     ]
     return random.choice(text_options)
 
@@ -445,7 +460,6 @@ def wait_for_wake_word_or_input(interaction_mode, wake_word="aurora"):
                         return ""
                         
                     if wake_word in detected_text:
-                        playsound("src/listen.mp3")
                         print(Fore.CYAN + "Wake word detected. Starting conversation..." + Style.RESET_ALL)
                         write_to_api("waiting", False)
                         stop_timer()
@@ -459,13 +473,13 @@ def wait_for_wake_word_or_input(interaction_mode, wake_word="aurora"):
                     print(Fore.RED + f"An error occurred: {e}" + Style.RESET_ALL)
 
 def countdown_timer(seconds):
-    playsound("src/converted.mp3")
+    make_voice("Time Made", rate=1.0)
     for remaining in range(seconds, 0, -1):
         sys.stdout.write(f"\rTime remaining: {remaining} seconds ")
         sys.stdout.flush()
         time.sleep(1)
     print("\nTime's up!")
-    playsound("src/timer.mp3")
+    make_voice("Timer! Timer! Timer!", rate=1.0)
 
 def timer_function():
     global is_timer_active
@@ -583,7 +597,7 @@ def sort_files(folder_path):
     print(f"Sorted files in: {folder_path}")
 
 def sort_active_folder():
-    playsound("src/converting.mp3")
+    make_voice("Sorting...", rate=1.0)
     """Sorts files in the currently active folder if a file manager is open."""
     focused_app = get_focused_app()
 
@@ -617,7 +631,6 @@ def get_voice_input():
 
     write_to_api("response", "yes")
     write_to_api("finished", False)
-    playsound("src/popon.mp3")
 
     print(Fore.YELLOW + "Listening..." + Style.RESET_ALL)
     set_music(0.3)
@@ -641,13 +654,13 @@ def get_voice_input():
                     break  # Stop listening after receiving a result
 
             print(Fore.CYAN + "Processing your input..." + Style.RESET_ALL)
-            playsound("src/popoff.mp3")
             set_music(1.0)
 
             if result_text == "huh":
                 return "no reply"
 
             if not result_text:
+                make_voice(get_random_hear(), rate=1.0)
                 print(Fore.RED + "Sorry, I couldn't understand you." + Style.RESET_ALL)
                 write_to_api("response", "yes")
                 return ""
@@ -835,10 +848,10 @@ def conversation_loop():
             emotion = "nervous"
             write_to_api("emotion", emotion)
         elif "@e_neutral" in output.lower():
-            emotion = "neutral"
+            emotion = "normal"
             write_to_api("emotion", emotion)
         elif "@e_scared" in output.lower():
-            emotion = "scared"
+            emotion = "shocked"
             write_to_api("emotion", emotion)
         conversation_history = add_message_to_history(conversation_history, "AI", output)
 
@@ -855,7 +868,7 @@ def conversation_loop():
             output = re.sub('@E_NEUTRAL', '', output)
             output = re.sub('@E_SCARED', '', output)
             output = re.sub('@END', '', output)
-            #Print AI's response because it needds to be printed!
+            #Print AI's response because it needs to be printed!
             process_and_play(output)
             output = remove_play_and_before(output)
             print(Fore.GREEN + output + Style.RESET_ALL)
@@ -864,6 +877,7 @@ def conversation_loop():
             send_output(output)
             if output.strip():  # Check if output is not empty or whitespace
                 make_voice(voice_text=output, rate=1.0)
+                make_voice(get_random_end(), rate=1.0)
             else:
                 print(Fore.LIGHTBLACK_EX + "Output is empty; skipping TTS generation." + Style.RESET_ALL)
             save_conversation_to_file(conversation_history)
@@ -1012,50 +1026,70 @@ def gemini_api(gem_input):
         raise TypeError("Unexpected response type from Gemini API")
         
 def make_voice(voice_text, rate=1.0):
-    if voice_text == "":
-        return
-    if not settings.speak:
-        return  # Exit if speaking is disabled
+    """
+    If called again while speech is ongoing, the new call will 
+    wait until the current speech finishes before proceeding.
+    """
+    with _make_voice_lock:
+        # If there's no text or speaking is disabled, just exit
+        if not voice_text:
+            return
+        if not settings.speak:
+            return
+        
+        audio_file = "voice.wav"
+        
+        # Indicate we're about to start talking
+        write_to_api("talking", True)
+        write_to_api("output", voice_text)
 
-    talking = True
-    audio_file = "voice.wav"
+        # Generate speech using Coqui TTS
+        tts.tts_to_file(text=voice_text, file_path=audio_file)
 
-    # Generate speech using Coqui TTS
-    tts.tts_to_file(text=voice_text, file_path=audio_file)
+        # If the user wants a different playback speed
+        if rate != 1.0:
+            sound = AudioSegment.from_wav(audio_file)
+            sound = sound.speedup(playback_speed=rate)
+            sound.export(audio_file, format="wav")
 
-    # Adjust speed if rate is not 1.0
-    if rate != 1.0:
-        sound = AudioSegment.from_wav(audio_file)
-        sound = sound.speedup(playback_speed=rate)  # Adjust playback speed
-        sound.export(audio_file, format="wav")  # Save modified audio
+        # Initialize pygame mixer if not yet initialized
+        if not pygame.mixer.get_init():
+            pygame.mixer.init()
+            print("pygame.mixer initialized.")
 
-    # Initialize pygame mixer if not already initialized
-    if not pygame.mixer.get_init():
-        pygame.mixer.init()
-        print("pygame.mixer initialized.")
+        # Lower background music
+        set_music(0.3)
 
-    set_music(0.3)  # Lower background music
-    talkchannel = pygame.mixer.Channel(1)
-    words = pygame.mixer.Sound(audio_file)
-    talkchannel.play(words)
+        # Create/play the sound
+        talkchannel = pygame.mixer.Channel(1)
+        words = pygame.mixer.Sound(audio_file)
 
-    # Wait until audio finishes playing
-    while talkchannel.get_busy():
-        pygame.time.Clock().tick(5)
+        # Get length of the audio in seconds
+        duration_seconds = words.get_length()
+        write_to_api("length", str(duration_seconds))
 
-    talking = False
-    talkchannel.stop()  # Stop the playback
+        # Start playing
+        talkchannel.play(words)
 
-    # Try to delete the audio file
-    try:
-        os.remove(audio_file)
-    except PermissionError as e:
-        print(f"Error deleting file: {e}")
-        time.sleep(1)  # Wait before retrying
-        os.remove(audio_file)  # Retry deleting the file
+        # Wait until playback finishes
+        while talkchannel.get_busy():
+            pygame.time.Clock().tick(1)
 
-    set_music(1.0)  # Restore music volume
-    write_to_api("output", "")
+        talkchannel.stop()
+
+        # Remove the temporary audio file
+        try:
+            os.remove(audio_file)
+        except PermissionError as e:
+            print(f"Error deleting file: {e}")
+            time.sleep(1)
+            os.remove(audio_file)
+
+        # Indicate we're done talking
+        write_to_api("talking", False)
+
+        # Restore music volume
+        set_music(1.0)
 
 def extract_numbers(text):
     """Extracts numbers from a string and converts them to an integer."""
@@ -1225,7 +1259,7 @@ def convert_file(file_path):
         print("No valid file detected. Copy a file and try again.")
         return
 
-    playsound("src/converted.mp3")
+    make_voice("Converted", rate=1.0)
 
     mime_type, _ = mimetypes.guess_type(file_path)
     filename, ext = os.path.splitext(file_path)
@@ -1268,7 +1302,7 @@ def monitor_clipboard():
 
     last_clipboard = None
     
-    playsound("src/converting.mp3")
+    make_voice("Waiting for you to Copy Something", rate=1.0)
     
     while Convert == True:
         try:
@@ -1301,7 +1335,7 @@ if __name__ == "__main__":
 
     # Assuming 'settings' is a module that contains a 'voice' variable
     import settings
-    playsound("src/ready.mp3")
+    make_voice("Hello, I'm Aurora", rate=1.0)
     # Get interaction mode from settings, if set; otherwise, use input
     if hasattr(settings, 'voice') and settings.voice is not None:
         interaction_mode = '2' if settings.voice else '1'
