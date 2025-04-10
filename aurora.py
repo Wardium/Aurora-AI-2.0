@@ -95,7 +95,7 @@ send_image = False
 image = ""
 Convert = False
 Continue = ""
-tts = TTS("tts_models/en/ljspeech/tacotron2-DDC")
+tts = TTS("tts_models/en/ljspeech/speedy-speech")
 
 ai_model_name = "gemini-1.5-flash"
 fast_ai_model_name = "gemini-1.5-flash-8b"
@@ -110,7 +110,7 @@ personality = settings.personality_text + (
         "\n"
         "3. Use the last emotion in history to set your current emotion, this may not be the same as your set presonality."
         "\n"
-        "4. your name is aurora, you are a fully scentient robot that looks mostly humanoid with some now humanoid parts."
+        "4. your name is aurora, you are a fully scentient robot that looks mostly humanoid"
         "\n"
         "5. never prefix your response with AI:"
         "\n"
@@ -120,7 +120,7 @@ personality = settings.personality_text + (
         "\n"
         "8. all messages in history and response has a time, use this to get proper time between respones and act accordingly."
         "\n"
-        "9. if user prompt includes '@RANDOM': you started the conversation, the user has said nothing. the prompt may include the reason. respond with a conversation starter like: 'what are you doing?', 'what's that you're doing?', 'why are you doing that?','how are you doing?'"
+        "9. if user prompt includes '@RANDOM': you started the conversation, the user has said nothing. the prompt may include the reason. respond with a conversation starter like: 'what are you doing?', 'why are you doing that?','how are you doing?'"
         "\n"
         "10. Never talk for the user."
         "\n"
@@ -347,13 +347,14 @@ def get_random_greet():
         "Yes?",
         "Hm?",
         "What is it?",
+        f"What is it " + settings.name + "?",
     ]
     return random.choice(text_options)
 
 def get_random_end():
     text_options = [
         "Talk to you later",
-        "Talk to you later",
+        f"Talk to you later " + settings.name,
         "See ya",
         "Bye",
         "I'm done talking now",

@@ -115,7 +115,7 @@ class FaceApp:
         self.bounce_timer = 60  # frames of bounce after starting animation
 
     def walk_out(self):
-        self.animation_start_x = self.screen_width - self.win_width
+        self.animation_start_x = self.x
         self.animation_progress = 0.0
         self.visible = False
         self.animating = True
