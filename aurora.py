@@ -97,8 +97,8 @@ Convert = False
 Continue = ""
 tts = TTS("tts_models/en/ljspeech/tacotron2-DDC")
 
-ai_model_name = "gemini-1.5-flash"
-fast_ai_model_name = "gemini-1.5-flash-8b"
+ai_model_name = "gemini-2.5-flash"
+fast_ai_model_name = "gemini-2.5-flash"
 
 
 personality = settings.personality_text + (
