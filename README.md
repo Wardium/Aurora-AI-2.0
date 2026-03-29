@@ -35,8 +35,8 @@ Aurora AI is a multi-functional AI assistant built with Python. It leverages nat
    
 2. **Clone the Repository**:  
    ```bash
-   git clone https://github.com/<yourusername>/aurora-ai.git
-   cd aurora-ai
+   git clone https://github.com/Wardium/Aurora-AI-2.0.git
+   cd Aurora-AI-2.0
 
 3. **Run The Installer!**
    ```bash
